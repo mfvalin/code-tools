@@ -6,3 +6,4 @@ packageName=${packageHome##*/}
 profilePath=${profileDirPath}/${packageName}.sh
 mkdir -p ${profileDirPath}
 #echo "#${packageName%%_*}_HOME=${packageHome}" >> ${profilePath}
+echo "export RPN_TEMPLATE_LIBS=${packageHome}/include" > ${profilePath}
