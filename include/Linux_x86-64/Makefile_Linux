@@ -1,0 +1,1 @@
+DEFINE = "-DAmd64=Amd64 -DLittle_Endian=Little_Endian"

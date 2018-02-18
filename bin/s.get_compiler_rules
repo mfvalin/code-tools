@@ -1,0 +1,10 @@
+#!/bin/ksh
+MyLocation=$(true_path $0)
+MyLocationDir=${MyLocation%/bin/*}
+Targets="s_002 s_001 s"
+[[ "$1" = --beta=* ]] && Targets="s_${1#--beta=}" && shift
+s.locate_item  --postfix="${Targets}" Pre_Compiler_rule ./${EC_ARCH} ${HOME}/userlibs/${EC_ARCH}  ${MyLocationDir}/include/${EC_ARCH}
+s.locate_item  --postfix="${Targets}" Common_Compiler_rule ./${EC_ARCH} ${HOME}/userlibs/${EC_ARCH}  ${MyLocationDir}/include/${EC_ARCH} $ARMNLIB/include/$EC_ARCH || \
+s.locate_item  --postfix="${Targets}" Compiler_rule ./${EC_ARCH} ${HOME}/userlibs/${EC_ARCH}  ${MyLocationDir}/include/${EC_ARCH} $ARMNLIB/include/$EC_ARCH
+s.locate_item  --postfix="${Targets}" Post_Compiler_rule ./${EC_ARCH} ${HOME}/userlibs/${EC_ARCH}  ${MyLocationDir}/include/${EC_ARCH}
+exit $?

@@ -1,0 +1,44 @@
+export SUNS12=/home/ordenv/dist/sw/SUN
+export PATH=${SUNS12}/sunstudio12/bin:$PATH
+define="-DLittle_Endian -Di386=i386 -DSUN=SUN"
+MPI_LIB=${MPI_LIB:-mpich}
+#MPI_FC="mpif90 "
+#MPI_CC=mpicc
+FC=${F77C:-sunf95}
+F90C=${F90C:-sunf95}
+#FC=${F77C:-r.sunf90}
+#F90C=${F90C:-r.sunf90}
+CC="/usr/bin/cc"
+FC_SHARED="-shared -G"
+CC_SHARED="-shared -G"
+Iprefix="-I"
+Lprefix="-L"
+lprefix="-l"
+FC_options=${FC_options:-"-Kpic -xfilebyteorder=big16:%all ${Iprefix}. ${Iprefix}${ARMNLIB}/include ${Iprefix}${ARMNLIB}/include/${ARCH} -L${ARMNLIB}/lib/${ARCH} --allow-shlib-undefined "}
+test "$shared$SHARED" = "" && FC_options=" -Bstatic ${FC_options}"
+OPENMP="-xopenmp=parallel -lpthread"
+OPENMPCC="-D_REENTRANT -D_THREAD_SAFE  -lpthread"
+#CC_options="-xtrigraphs -Kpic -I. -I${ARMNLIB}/include -I${ARMNLIB}/include/${ARCH} -I. -Wl,-rpath=${ARMNLIB}/lib/${ARCH} -Wl,--allow-shlib-undefined"
+CC_options="-Wl,--allow-shlib-undefined -Wtrigraphs -fpic -I. -I${ARMNLIB}/include -I${ARMNLIB}/include/${ARCH} -I. -Wl,-rpath,${ARMNLIB}/lib/${ARCH}"
+F_Opt[0]=-O0
+F_Opt[1]=-O1
+F_Opt[2]=-O2
+F_Opt[3]=-O3
+F_Opt[4]=-O4
+F_Opt[5]="-fast -ftrap=%none -xarch=sse3"
+O_DEBUG="-g -ftrap=%all"
+O_DEBUG_C="-g"
+C_Opt[0]=-O0
+C_Opt[1]=-O1
+C_Opt[2]=-O2
+C_Opt[3]=-O3
+C_Opt[4]=-O4
+prof_option="-p"
+#prof_option="-p -Mprof=lines"
+
+COMPILE_ON=rossby
+DISTRIBUTE_TO=rossby
+AR=ar
+VECTOR_LIBS=massvp4
+VECTOR_LIBS_safe=massvp4_safe
+echo Compiler Rules applied for Linux_sun12

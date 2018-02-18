@@ -1,0 +1,34 @@
+export ARCH=${FORCE_ARCH:-$ARCH}
+export ARCH=${EC_ARCH:-$ARCH}
+export EC_ARCH=${EC_ARCH:-$ARCH}
+. s.get_pkg_cfg.dot
+if [[ "$1" = "--beta" ]]
+then
+#  echo settting Beta to $2
+  Rules_Beta="$2"
+  shift ; shift ;
+fi
+Vrs="_001"
+if [[ "$1" = "--version" ]]
+then
+#  echo settting Version to $2
+  Vrs="$2"
+  shift ; shift ;
+fi
+unset STD_Rules
+unset USER_RulesS
+[[ -f ${MY_cfg}/${EC_ARCH}/Compiler_rules${Rules_Beta} ]] && STD_Rules=${MY_cfg}/${EC_ARCH}/Compiler_rules${Rules_Beta}
+[[ -f ${MY_cfg}/${EC_ARCH}/Compiler_rules${Vrs}${Rules_Beta} ]] && STD_Rules=${MY_cfg}/${EC_ARCH}/Compiler_rules${Vrs}${Rules_Beta}
+[[ -f $HOME/userlibs/${EC_ARCH}/Compiler_rules${Rules_Beta} ]] && USER_Rules=$HOME/userlibs/${EC_ARCH}/Compiler_rules${Rules_Beta}
+[[ -f $HOME/userlibs/${EC_ARCH}/Compiler_rules${Vrs}${Rules_Beta} ]] && USER_Rules=$HOME/userlibs/${EC_ARCH}/Compiler_rules${Vrs}${Rules_Beta}
+if [[ -r ${USER_Rules} ]] ; then
+  s.echo Compiler_rules = ${USER_Rules} && . ${USER_Rules}
+else
+  if [[ -r ${STD_Rules} ]]
+  then
+    s.echo Compiler_rules = ${STD_Rules} && . ${STD_Rules}
+  else
+    s.echo FATAL ERROR: no usable Compiler Rule file found: ABORTING
+    exit 1
+  fi
+fi

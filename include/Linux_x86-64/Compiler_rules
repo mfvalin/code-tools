@@ -1,0 +1,39 @@
+#echo APPLIED Compiler RULES from Linux_x86-64_pgi611
+define="-DLittle_Endian -DAmd64=Amd64"
+MPI_LIB=${MPI_LIB:-mpich}
+#MPI_FC="mpif90"
+#MPI_FC="mpif90 -I$MPI_HOME/include -L$MPI_HOME/lib"
+#MPI_FC="r.pgf90_64 -I/usr/local/mpich/include -L/usr/local/mpich/build/LINUX/ch_p4/lib"
+MPI_CC=mpicc
+#FC=${F77C:-r.pgf90_64}
+#F90C=${F90C:-r.pgf90_64}
+CC="cc"
+#FC_SHARED="-shared"
+CC_SHARED="-shared"
+Iprefix="-I"
+Lprefix="-L"
+lprefix="-l"
+#FC_options=${FC_options:-"-tp ${PGI_tp:-x64} -fpic -byteswapio ${Iprefix}. ${Iprefix}${ARMNLIB}/include ${Iprefix}${ARMNLIB}/include/${ARCH} -Wl,-rpath,${ARMNLIB}/lib/Linux"}
+#OPENMP="-mp -lpthread"
+OPENMPCC="-D_REENTRANT -D_THREAD_SAFE"
+CC_options="-Wtrigraphs -fpic -I. -I${ARMNLIB}/include -I${ARMNLIB}/include/${ARCH} -I."
+#F_Opt[0]=-O0
+#F_Opt[1]=-O1
+#F_Opt[2]=-O2
+#F_Opt[3]="-O2 -fast"
+#F_Opt[4]="-O2 -fast"
+O_DEBUG="-g -Ktrap=fp"
+C_Opt[0]=-O0
+C_Opt[1]=-O1
+C_Opt[2]=-O2
+C_Opt[3]=-O2
+C_Opt[4]=-O2
+prof_option="-p"
+#prof_option="-p -Mprof=lines"
+
+COMPILE_ON=rossby
+DISTRIBUTE_TO=rossby
+AR=ar
+#VECTOR_LIBS=massvp4_safe
+#VECTOR_LIBS_safe=massvp4_safe
+echo Compiler Rules for amd64 architecture applied

@@ -1,0 +1,70 @@
+
+define="-DLittle_Endian -Di386=i386 -DWITH_pgi"
+
+Dprefix=""
+Iprefix="-I"
+Lprefix="-L"
+lprefix="-l"
+
+FC=${F77C:-pgf95}
+F90C=${F90C:-pgf95}
+PGI_TP="${PGI_TP:--tp p7-64}"
+#FC_options=${FC_options:-"-fpic -byteswapio ${Iprefix}. ${PGI_TP}"}
+FC_options=${FC_options:-"-Mreentrant -Miomutex -byteswapio ${Iprefix}. ${PGI_TP} ${PGI_EXTRA_OPTIONS}"}
+FC_LD_options="-Wl,--allow-shlib-undefined "
+FC_SHARED="-shared -fpic -Bdynamic"
+#FC_STATIC="-mcmodel=medium -Bdynamic"
+#FC_STATIC="-fpic -Bstatic_pgi"
+FC_STATIC="-Bstatic_pgi"
+
+#CC="pgcc"
+#CPP=pgCC
+CC="gcc"
+CPP=g++
+CC_SHARED="-shared -fpic"
+#CC_STATIC="-mcmodel=medium"
+CC_STATIC="-fpic"
+
+#MPI_LIB=${MPI_LIB:-mpich}
+MPI_LIB="c"
+MPI_FC="mpif90 "
+MPI_F90C="mpif90 "
+MPI_CC=mpicc
+
+#OPENMP="-mp -lpthread -Wl,-rpath,$($FC --pgidir)/lib"
+OPENMP="-mp -lpthread "
+#OPENMPCC="-mp -D_REENTRANT -D_THREAD_SAFE  -lpthread"
+OPENMPCC="-D_REENTRANT -D_THREAD_SAFE  -lpthread"
+
+#CC_options="-Wl,--allow-shlib-undefined -Wtrigraphs -fpic -I. "
+#CC_options_NOLD="-Wtrigraphs -fpic -I. "
+CC_options="-Bdynamic -Wl,--allow-shlib-undefined -I."
+CC_options_NOLD="-I."
+
+F_Opt[0]=-O0
+F_Opt[1]=-O1
+F_Opt[2]="-O2 -Mscalarsse"
+F_Opt[3]="-O2 -Mvect=sse -Mscalarsse"
+F_Opt[4]="-O3 -fast"
+F_Opt[5]="-O4 -fast"
+
+O_DEBUG="-g -Ktrap=fp"
+O_DEBUG_C="-g"
+
+C_Opt[0]=-O0
+C_Opt[1]=-O1
+C_Opt[2]="-O2"
+#C_Opt[3]="-O2 -mtune=native -mfpmath=sse -mmmx"
+C_Opt[3]="-O3"
+#C_Opt[4]="-O3 -mtune=native -mfpmath=sse -mmmx"
+C_Opt[4]="-O4"
+
+prof_option="-p"
+#prof_option="-p -Mprof=lines"
+
+COMPILE_ON=erg
+DISTRIBUTE_TO=erg
+AR=ar
+VECTOR_LIBS=massvp4_safe
+VECTOR_LIBS_safe=massvp4_safe
+echo Compiler Rules applied for Linux PGI version $PGI_VERSION

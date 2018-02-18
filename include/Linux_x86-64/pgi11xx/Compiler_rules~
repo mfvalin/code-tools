@@ -1,0 +1,43 @@
+export LM_LICENSE_FILE=27000@cmclic.cmc.ec.gc.ca
+#export PATH=/home/ordenv/dist/sw/PGI/9.0_$(uname -m)_$(cat /etc/debian_version)/linux86-64/bin:$PATH
+export PATH=/home/ordenv/dist/sw/PGI/debian_64_$(cat /etc/debian_version)/linux86-64/2010/bin:$PATH
+define="-DLittle_Endian -Di386=i386"
+MPI_LIB=${MPI_LIB:-mpich}
+#MPI_FC="mpif77 "
+#MPI_F90C="mpif90 "
+MPI_CC=mpicc
+FC=${F77C:-pgf90}
+F90C=${F90C:-pgf90}
+CC="cc"
+FC_SHARED="-shared"
+CC_SHARED="-shared"
+Iprefix="-I"
+Lprefix="-L"
+lprefix="-l"
+FC_options=${FC_options:-"-fpic -byteswapio ${Iprefix}. ${Iprefix}${ARMNLIB}/include ${Iprefix}${ARMNLIB}/include/${ARCH} -Wl,-rpath,${ARMNLIB}/lib/${ARCH} -Wl,--allow-shlib-undefined"}
+test "${PGI_SHARED:-${shared}}" = "" && FC_options="${FC_options} -Bstatic_pgi -Wl,-rpath,/home/ordenv/dist/sw/PGI/9.0_$(uname -m)_$(cat /etc/debian_version)/linux86-64/9.0/lib"
+OPENMP="-mp -lpthread"
+OPENMPCC="-D_REENTRANT -D_THREAD_SAFE  -lpthread"
+CC_options="-Wl,--allow-shlib-undefined -Wtrigraphs -fpic -I. -I${ARMNLIB}/include -I${ARMNLIB}/include/${ARCH} -I. -Wl,-rpath,${ARMNLIB}/lib/${ARCH}"
+CC_options_NOLD="-Wtrigraphs -fpic -I. -I${ARMNLIB}/include -I${ARMNLIB}/include/${ARCH} -I."
+F_Opt[0]=-O0
+F_Opt[1]=-O1
+F_Opt[2]=-O2
+F_Opt[3]="-O2 -fast"
+F_Opt[4]="-O2 -fast"
+O_DEBUG="-g -Ktrap=fp"
+O_DEBUG_C="-g"
+C_Opt[0]=-O0
+C_Opt[1]=-O1
+C_Opt[2]=-O2
+C_Opt[3]=-O2
+C_Opt[4]=-O2
+prof_option="-p"
+#prof_option="-p -Mprof=lines"
+
+COMPILE_ON=notos
+DISTRIBUTE_TO=notos
+AR=ar
+VECTOR_LIBS=massvp4_safe
+VECTOR_LIBS_safe=massvp4_safe
+echo Compiler Rules applied for Linux_pgi9xx

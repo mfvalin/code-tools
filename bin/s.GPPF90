@@ -1,0 +1,2 @@
+#!/bin/ksh
+LANG_F90_PLUS="-lang-f90+" s.GPPF "$@"

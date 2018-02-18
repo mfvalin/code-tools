@@ -1,0 +1,356 @@
+#!/bin/ksh
+#
+######################################################################################
+#
+# Script s.make_exec, Luc Corbeil, 2000-01-20
+#
+######################################################################################
+#
+# Ce script doit etre appele par s.compile. Il  permet de lier des .o en
+# absolu a l'aide des variables precedemment utilisees.
+# 
+# Doit etre appele avec un point ( . s.make_exec ) 
+#
+# Modifications: voir s.compile
+#
+# 11 juil 2000: si "ls ${objets[@]}" exit anormalement, warning 
+#               et compilation de ce qui existe seulement
+# 12 juil 2001: bug fix sur "ls ${objets[@]}" si ${objets[@]} vide
+#####################################################################################
+
+####
+# Compilation
+####
+# blank stripping
+objets=${objets%%" "}
+
+ligne_comp_f="${FC:-f90} ${ALL_FC_options_LD} -o ${o} "
+ligne_comp_f90="${F90C:-$FC} ${ALL_FC_options_LD} -o ${o} "
+ligne_comp_c="${CC:-cc} ${ALL_CC_options_LD} -o ${o} "
+ligne_comp_cpp="${CPP} ${ALL_CPP_options_LD} -o ${o} "
+#ligne_bidon_c="${CC:-cc} -I${ARMNLIB:-/usr}/include -I${ARMNLIB:-/usr}/include/${EC_ARCH} ${ALL_CC_options_LD} "
+#ligne_bidon_c="s.cc ${ALL_CC_options_LD} "
+[[ $conly = c++ ]] && ligne_comp_c=$ligne_comp_cpp
+#if [[  X${objets[@]} = X ]] then
+if [[  X${objets} = X ]] then
+#   set -A objets_old
+   objets_old=""
+else
+#  set -A objets_old `ls ${objets[@]} 2>/dev/null`
+  objets_old="`ls ${objets[@]} 2>/dev/null`"
+fi
+
+#
+# Vidage de librairie .a.fl
+#
+   rm -rf .fo/* 2>/dev/null
+   mkdir .fo 2>/dev/null
+   mkdir .fo/vidange/
+   reverse_list=""
+   reverse_liblist=""
+# deballage des malib
+   if [[ X${use_malib} != X ]] then
+      ici=${PWD}
+      for item in ${use_malib}; do
+         if [[ X${item%/*} = X ]] then
+           ln -s $item .fo/${item##*/}
+         else
+           ln -s $PWD/$item .fo/${item##*/}
+         fi
+         cd .fo
+         s.ar -arch ${ARCH} x ${item##*/}
+         rm -f ${item##*/}
+         cd $ici
+      done   
+      objets="$(ls .fo/*.o) ${objets}"
+   fi
+   for item in ${pathlib[@]} ${pathrmn}; do
+	reverse_list="$item $reverse_list"
+   done
+   for item in ${alllib} ; do
+	reverse_liblist="$item $reverse_liblist"
+   done
+   libremove=""
+   for library in ${reverse_liblist} ; do
+     for path_lib in ${pathlib[@]} ${pathrmn} ; do
+	path_lib=${path_lib#${Lprefix}}
+	library=${library#${lprefix}}
+#	echo ${path_lib}/lib${library}.a.fl AA
+        if [[ -r ${path_lib}/lib${library}.a.fl ]] then
+	   ici=${PWD}
+	   cd .fo/vidange
+	   s.ar -arch ${arch} x ${path_lib}/lib${library}.a.fl 2>/dev/null
+	   cd $ici
+	   listepo=""
+	   for pointo in $(ls .fo/vidange/*.o) ; do
+	     if [[ ! -r .fo/$(basename $pointo) ]] then
+	      listepo="${listepo} .fo/$(basename $pointo)"
+	     fi
+	   done
+#	   echo OUI ${listepo}
+#	   set -A objets ${listepo} ${objets[@]}
+	   objets="${listepo} ${objets}"
+	   mv .fo/vidange/* .fo/ 2>/dev/null
+	   libremove="${libremove} ${library}"
+	fi
+     done
+   done
+
+  for lib2 in ${alllib} ; do
+    ajoute=TRUE
+    for library in ${libremove} ; do
+#	echo $lib2 ${lprefix}${library}
+      if [[ $lib2 = ${lprefix}${library} ]] then
+#	 echo $lib2 'OUI'
+	ajoute=FALSE
+#      else
+#	echo OUI  $lib2  ${lprefix}${library}
+      fi
+     done
+#	echo $ajoute $lib2 ${lprefix}${library}
+      if [[ $ajoute = TRUE ]] then
+         alllib2="${alllib2} $lib2"
+      fi
+   done
+
+   if [[ x${libremove} != x ]] then
+    alllib=$alllib2
+   fi
+#
+# New feature about beta code
+#
+
+if [[ codebeta != "" ]] then
+
+#   echo "REV $reverse_list"
+#   echo ${pathlib[@]}
+   for path_lib in ${reverse_list} ; do
+    path_lib=${path_lib#${Lprefix}}
+       for item in $codebeta ; do
+           if [[ -r $path_lib/$item.o ]] then
+		if [[ -r .fo/$item.o ]] then
+		    echo 
+		    echo "  WARNING: $item.o already there, replacing!" 
+		    ls -l .fo/$item.o
+		    echo
+		    rm -f .fo/$item.o 2>/dev/null
+		fi
+		ln -s $path_lib/$item.o .fo/$item.o
+#		set -A objets ${objets[@]} .fo/$item.o
+		objets="${objets} .fo/$item.o"
+	   fi
+	done
+   done
+fi
+
+
+# Est-ce qu'on a soit des objets, soit un bidon?
+#   nbo=`ls ${objets[@]} 2>/dev/null`
+   nbo=`ls ${objets} 2>/dev/null`
+# echo ${objets[@]} objets $nbo
+
+#if [[ x${objets[@]} = x || x${nbo} = x ]] then
+objets=${objets%%" "}
+if [[ x${objets} = x || x${nbo} = x ]] then
+	if [[ ${bidon} = NULL ]] then
+		echo '********************************'
+		echo "Pas d'objets et cle -bidon vide!"
+		echo '********************************'
+		exit 1
+	fi
+	if [[ x${main} = x ]] then	
+		echo '*******************************'
+		echo "Pas d'objets et cle -main vide!"
+		echo '*******************************'
+		exit 1
+	fi
+	if [[ x${nbo} = x ]] then
+#	  set -A objets 
+	  objets="" 
+#	  echo $objets ALLO
+	fi
+fi
+
+
+
+# fix to allow -fstd89 with *.o when *.o returns nothing
+# and warning if some .o doesn't exists!
+
+#if [[ x${objets[@]} != x ]] then
+# blank stripping
+objets=${objets%%" "}
+missing_obj=0
+if [[ x${objets} != x ]] then
+#  ls ${objets[@]} >/dev/null 2>/dev/null
+  for objitem in ${objets}
+  do
+    ls ${objitem} >/dev/null 2>/dev/null
+    STATUT=$?
+    if [[ $STATUT != 0 ]] then
+      echo
+      echo '****************************************************'
+      echo '           <<<    WARNING  !   >>>                  '
+      echo "s.compile: WARNING object '${objitem}' not found    "
+      echo ' '
+      echo '****************************************************'
+      echo
+      missing_obj=1
+    fi
+  done
+  if [[ "${strict}" == "Yes" && "${missing_obj}" == "1" ]] then
+    cat <<EOF
+            *************************************
+            <<< some object files are missing >>>
+            *************************************
+   ##    #####    ####   #####    #####     #    #    #   ####
+  #  #   #    #  #    #  #    #     #       #    ##   #  #    #
+ #    #  #####   #    #  #    #     #       #    # #  #  #
+ ######  #    #  #    #  #####      #       #    #  # #  #  ###
+ #    #  #    #  #    #  #   #      #       #    #   ##  #    #
+ #    #  #####    ####   #    #     #       #    #    #   ####
+EOF
+    exit 22
+  fi
+#  set -A objets `ls ${objets[@]} 2>/dev/null`
+  objets="`ls ${objets[@]} 2>/dev/null`"
+fi
+
+# Les .o de l'usager ont priorite sur .fo
+
+#for file in ${objets_old[@]} ; do
+for file in ${objets_old} ; do
+#    echo EFFACE $file ${file##*/}
+    file=${file##*/}
+    rm -f .fo/$file 2>/dev/null
+done
+
+#if [[ x${objets[@]} != x ]] then
+#  ls ${objets[@]} >/dev/null 2>/dev/null
+#  set -A objets `ls ${objets[@]} 2>/dev/null`
+objets=${objets%%" "}
+if [[ x${objets} != x ]] then
+  ls ${objets} >/dev/null 2>/dev/null
+  objets="`ls ${objets} 2>/dev/null`"
+fi
+
+# Est-ce qu'on a un main? Sinon, on utilise s.makebidon
+
+if [[ $bidon != NULL ]] then
+  le_module_bidon=""
+  if [[ "$bidon" != "pure_fortran" ]] then
+    s.makebidon -lang ${bidon} ${main} > ${o}_$$.c
+    echo "s.makebidon -lang ${bidon} ${main} > ${o}_$$.c"
+#    set -A objets ${objets[@]} ${o}_$$.c ${ARMNLIB}/${FULL_ABI}/makebidon.o
+    s.cc -c ${o}_$$.c ; mv $(basename ${o}_$$).o ${o}_$$.o 2>/dev/null
+# "bidon.c" not needed anymore, remove it
+    rm -f ${o}_$$.c
+    echo s.cc -c ${o}_$$.c 
+    le_module_bidon=$(s.locate_item ${mpi}makebidon.o $EC_LD_LIBRARY_PATH ${ARMNLIB}/lib/${FULL_ABI})
+    echo "DEBUG le_module_bidon=" ${le_module_bidon}
+  else
+    s.makebidon -lang ${bidon} ${main} > ${o}_$$.f
+    s.f77 -c ${o}_$$.f ; mv $(basename ${o}_$$).o ${o}_$$.o 2>/dev/null
+    echo s.f77 -c ${o}_$$.f
+    rm -f ${o}_$$.f
+  fi
+    if [[ $debug = NODEBUG ]]
+    then
+      objets="${objets} ${o}_$$.o ${le_module_bidon}"
+    else
+      objets="${objets} ${o}_$$.o ${le_module_bidon}"
+    fi
+#    $ligne_comp_f ${objets[@]} ${alllib} ${MPILIB}
+    $ligne_comp_f90 ${objets} ${alllib} ${MPILIB}
+    STATUT=$?
+    echo
+    echo  Commande effectuee:
+#    echo  "$ligne_comp_f ${objets[@]} ${alllib} ${MPILIB}"
+    echo  $ligne_comp_f90 ${objets} ${alllib} ${MPILIB}
+    echo
+else
+	if [[ ${conly} = conly || ${conly} = c++ ]] then
+		if [[ x${varlog} = x ]] then
+#		  $ligne_comp_c ${objets[@]} ${alllib} ${MPILIB}
+ 		  $ligne_comp_c ${objets} ${alllib} ${MPILIB}
+       	  STATUT=$?
+		  echo
+		  echo  Commande effectuee:
+#		  echo  "$ligne_comp_c ${objets[@]} ${alllib} ${MPILIB}"
+		  echo  $ligne_comp_c ${objets} ${alllib} ${MPILIB}
+		  echo
+		else
+#		  $ligne_comp_c ${objets[@]} ${alllib} ${MPILIB} >> ${varlog} 2>&1
+		  $ligne_comp_c ${objets} ${alllib} ${MPILIB} >> ${varlog} 2>&1
+        	  STATUT=$?
+		  echo
+		  echo  Commande effectuee:
+#		  echo  "$ligne_comp_c ${objets[@]} ${alllib} ${MPILIB} >> ${varlog} 2>&1"
+		  echo  $ligne_comp_c ${objets} ${alllib} ${MPILIB} >> ${varlog} 2>&1
+		  echo
+		fi
+	else
+		if [[ x${varlog} = x ]] then		
+#		  $ligne_comp_f ${objets[@]} ${alllib} ${MPILIB}
+		  $ligne_comp_f90 ${objets} ${alllib} ${MPILIB} 
+		  STATUT=$?
+		  echo
+		  echo  Commande effectuee:
+#		  echo  "$ligne_comp_f ${objets[@]} ${alllib} ${MPILIB}"
+		  echo  $ligne_comp_f90 ${objets} ${alllib} ${MPILIB}
+		  echo
+		else
+#		  $ligne_comp_f ${objets[@]} ${alllib} ${MPILIB} >> $log 2>&1
+		  $ligne_comp_f90 ${objets} ${alllib} ${MPILIB} >> $log 2>&1
+		  STATUT=$?
+		  echo
+		  echo  Commande effectuee:
+#		  echo  "$ligne_comp_f ${objets[@]} ${alllib} ${MPILIB} >> ${varlog} 2>&1"
+		  echo  $ligne_comp_f90 ${objets} ${alllib} ${MPILIB} >> ${varlog} 2>&1
+		  echo
+		fi
+	fi
+    
+
+fi
+
+# menage de s.makebidon
+
+if [[ $bidon != NULL ]] then
+rm -f ${o}_$$.*
+fi
+
+rm -rf .fo/* 2>/dev/null
+
+
+if [[ $STATUT != 0 ]] then
+    if [[ x$liste != x ]] then
+#	echo "${objets[@]} : erreur, `date`" >> $liste
+	echo ${objets} : erreur, `date` >> $liste
+    fi
+    if [[ $ignorerr = OFF ]] then
+    echo '*********************'
+    echo 'ERREUR DE COMPILATION'
+    echo '*********************';exit 1
+    fi
+
+else
+    if [[ x$liste != x ]] then
+#	echo "${objets[@]} : ok, `date`" >> $liste
+	echo ${objets} : ok, `date` >> $liste
+
+    echo "Librairies Chargees: " >> $liste
+#   Liste des librairies attrapees
+    for rep in ${libpath} ${pathrmn#${Lprefix}} ; do
+      for libr in ${alllib} ${MPILIB}; do
+        if [ -r ${rep}/lib${libr#${lprefix}}.a ] ; then
+           echo >> $liste
+           echo "Pour la librairie ${libr#${lprefix}}" >> $liste
+           echo  >> $liste
+           echo $(true_path ${rep}/lib${libr#${lprefix}}.a) >> $liste
+#           echo $(ls -lL ${rep}/lib${libr#${lprefix}}.a) >> $liste
+        fi
+      done
+    done
+    fi
+
+fi

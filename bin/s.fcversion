@@ -1,0 +1,10 @@
+#!/usr/bin/ksh
+echo === ${1:-unknown.o} ===
+if [[ `uname -s` = Linux ]] ; then
+ strings -a ${1:-unknown.o} | grep '\(PGF90\)\|\(Sun Fort\)\|\(GCC:\)\|\(IBM XL\)'
+else
+ strings -a ${1:-unknown.o} | grep 'IBM XL'
+ strings -a ${1:-unknown.o} | grep 'Sun Fort'
+ strings -a ${1:-unknown.o} | grep 'GCC:'
+ strings -a ${1:-unknown.o} | grep 'PGF90'
+fi

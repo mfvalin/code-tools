@@ -1,0 +1,20 @@
+#!/bin/ksh
+if [[ "$1" = --gppf ]]
+then
+  shift
+  while [[ -n $1 ]]
+  do
+    if [[ "$1" != -- ]] 
+    then
+      Options="${Options} $1"
+      shift
+    else
+      shift
+      break
+    fi
+  done
+  Options="$2" && shift && shift
+fi
+INCLUDES="${EC_INCLUDE_PATH}"
+[[ -d $ARMNLIB/include ]] && INCLUDES="$INCLUDES ${ARMNLIB}/include ${ARMNLIB}/include/${EC_ARCH}"
+r.gppf ${LANG_F90_PLUS} -chop_bang -gpp -F $Options $(s.prefix -I ${INCLUDES}) -D__FILE__="#file" -D__LINE__="#line" "$@"

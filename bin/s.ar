@@ -1,0 +1,8 @@
+#!/bin/ksh
+# get rid of the arch argument
+[[ "$1" == -arch ]] && shift && shift
+. s.get_compiler_rules.dot
+vrai_ar=${AR:-ar}
+
+set -x
+$vrai_ar $ARFLAGS $@

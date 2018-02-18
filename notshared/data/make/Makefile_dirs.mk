@@ -1,0 +1,2 @@
+SOURCE_DIR=Source
+BUILD_DIR=Build

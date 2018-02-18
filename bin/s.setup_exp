@@ -1,0 +1,119 @@
+#!/bin/ksh
+#set -x
+MAKE_CFG=$(true_path $0)
+MAKE_CFG=${MAKE_CFG%/*}/../notshared/data/make
+[[ -z $EC_ARCH ]]               && echo ERROR: EC_ARCH is not defined && exit 1
+[[ -r .exper_name ]] && exp_name="$(cat .exper_name)"
+SOURCE_DIR=Source
+BUILD_DIR=Build
+[[ -r Makefile_dirs.mk ]] && . ./Makefile_dirs.mk
+unset FORCE_BLDDIR
+
+while [[ -n $1 ]]
+do
+	case "$1" in
+	-h|--help )
+		echo usage: ${0##*/} [--exp=name] [--src=name] [--bld=name] [--blddir=path_to_real_build_dir] [--force-blddir]
+		exit 0
+		;;
+	--exp=* )
+		exp_name=${1#*=}
+		[[ -r .exper_name ]] && \
+			[[ "$(cat .exper_name)" != "$exp_name" ]] && \
+			echo "ERROR: cannot rename experiment" && \
+			exit 1 
+		if [[ ! -f .exper_name ]]
+		then
+			echo "$exp_name" > .exper_name || \
+			{ echo "ERROR: cannot write experiment  name" ; exit 1 ; }
+		fi
+		;;
+	--src=* )
+		[[ -r Makefile_dirs.mk ]] && \
+			[[ "$SOURCE_DIR" != "${1#*=}" ]] && \
+			echo "ERROR: cannot change source directory name" && \
+			exit 1
+		SOURCE_DIR=${1#*=}
+		;;
+	--bld=* )
+		[[ -r Makefile_dirs.mk ]] && \
+			[[ "$BUILD_DIR" != "${1#*=}" ]] && \
+			echo "ERROR: cannot change build directory name" && \
+			exit 1
+		BUILD_DIR=${1#*=}
+		;;
+	--force-blddir )
+		FORCE_BLDDIR="yes"
+		;;
+	--blddir=* )
+		BUILD_DIR_NAME=${1#*=}
+		;;
+	* )
+		echo "ERROR: unrecognized argument $1"
+		set shift_me -h
+		;;
+	esac
+	shift
+done
+# if experiment name not supplied, use name of current directory
+[[ -z $exp_name ]] && CURDIR=$(true_path .) && exp_name=${CURDIR##*/}
+if [[ ! -f .exper_name ]]   # write experiment name in marker file
+then
+	echo "$exp_name" > .exper_name || \
+	{ echo "ERROR: cannot write experiment  name" ; exit 1 ; }
+fi
+# create source tree and build tree tops
+mkdir -p $SOURCE_DIR $BUILD_DIR
+[[ ! -f Makefile_dirs.mk ]] && \
+	echo SOURCE_DIR=$SOURCE_DIR >Makefile_dirs.mk && \
+	echo BUILD_DIR=$BUILD_DIR >>Makefile_dirs.mk
+# get  basic Makefiles
+for target in Makefile Makefile_dirs.mk Makefile_subtree.mk rules.mk
+do
+	[[ ! -f $target ]] && echo copying $MAKE_CFG/$target && cp $MAKE_CFG/$target .
+done
+# set build tree ?
+[[ "$BUILD_DIR_NAME" = no ]] && echo Specific architecture build directory not created && exit 0  # no
+# yes, check if EC_ARCH is fully defined
+[[ -z $BASE_ARCH ]]             && echo ERROR: BASE_ARCH is not defined && exit 1
+[[ "$BASE_ARCH" = "$EC_ARCH" ]] && echo ERROR: EC_ARCH not FULLY defined && exit 1
+if [[ -z $BUILD_DIR_NAME ]]  # no name supplied for build tree for this experiment, try defaults
+then
+	[[ -d $HOME/BuildDirs/${EC_ARCH} ]] && BUILD_DIR_NAME=$HOME/BuildDirs/${EC_ARCH}    # architecture specific default
+	[[ -d $HOME/BuildDirs/${TRUE_HOST} ]] && BUILD_DIR_NAME=$HOME/BuildDirs/${TRUE_HOST} # host / cluster default
+	[[ -d "${EXPER_BUILD_DIR}" ]] && BUILD_DIR_NAME=${EXPER_BUILD_DIR}  # environment variable EXPER_BUILD_DIR
+fi
+while [[ -z $BUILD_DIR_NAME ]]  # not specified and no default, ask user
+do
+	printf "Path to build directory for architecture=${EC_ARCH} ?"
+	read BUILD_DIR_NAME
+done
+# directory does not exist, OOPS
+[[ ! -d $BUILD_DIR_NAME ]] && \
+	echo "ERROR: directory '$BUILD_DIR_NAME' does not exist" && \
+	exit 1
+#
+BUILD_DIR_NAME=$(true_path $BUILD_DIR_NAME)
+mkdir -p ${BUILD_DIR}/${BASE_ARCH}  # create base architecture part
+if [[ -d ${BUILD_DIR}/${EC_ARCH} ]]  # has the full architecture directory link already been created ?
+then
+	echo Path to build directory for architecture=${EC_ARCH} already exists
+	echo "and is set to '$(r.read_link ${BUILD_DIR}/${EC_ARCH})'"
+	printf "do you wish to redirect it to'$BUILD_DIR_NAME/$exp_name' [n/y]?"
+	read yesorno
+	[[ "$yesorno" != y ]] && echo no change made && exit 0
+	rm -f ${BUILD_DIR}/${EC_ARCH} # yes, remove link to old
+fi
+if [[ -d $BUILD_DIR_NAME/$exp_name ]] # is there a build directory for this full architrecture ?
+then   # yes, we will use it if --force_blddir was specified
+	[[ -z $FORCE_BLDDIR ]] || \
+		{ echo "ERROR: build directory '$BUILD_DIR_NAME/$exp_name' already exists and --force_blddir not specified"  ;
+		exit 1 ; }
+else   # no, try to make it
+	mkdir $BUILD_DIR_NAME/$exp_name || \
+		{ echo "ERROR: cannot create build directory '$BUILD_DIR_NAME/$exp_name'" ; exit 1 ; }
+fi
+rm -f $BUILD_DIR_NAME/$exp_name/.LinkBack # remove back link if there was one, then create a new one
+ln -s $(true_path .) $BUILD_DIR_NAME/$exp_name/.LinkBack || \
+	{ echo "ERROR: cannot create experiment back link in '$BUILD_DIR_NAME/$exp_name'" ; exit 1 ; }
+ln -s $BUILD_DIR_NAME/$exp_name ${BUILD_DIR}/${EC_ARCH}  # point the build tree link to the right place
