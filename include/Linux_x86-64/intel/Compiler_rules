@@ -34,14 +34,14 @@ lprefix="-l"
 
 # basic options to the FORTRAN compiler. position independent code is desirable, BIG ENDIAN I/O is necessary
 #                                        include path should include current directory
-FC_options=${FC_options:-"-assume byterecl -convert big_endian -fp-model source -march=core2 -arch SSE2 -fpe0 -fpic -reentrancy threaded -openmp -traceback -threads ${Iprefix}. "}
+FC_options=${FC_options:-"-assume byterecl -convert big_endian -fp-model source -march=core2 -arch SSE2 -fpe0 -fpic -reentrancy threaded -qopenmp -traceback -threads ${Iprefix}. "}
 FC_options="${FC_options} -no-wrap-margin -diag-disable ${DIAG_DISABLE:-99999},8290,8291,7713,10212,5140,8577"
 FC_LD_options="-Wl,--allow-shlib-undefined -fpic"   # added when linking/loading
 
 # flags to add to the FORTRAN compiler to get OpenMP support
-OPENMP="-openmp"
+OPENMP="-qopenmp"
 # flags to add to the C compiler to get OpenMP support
-OPENMPCC="-D_REENTRANT -D_THREAD_SAFE -openmp"
+OPENMPCC="-D_REENTRANT -D_THREAD_SAFE -qopenmp"
 
 # basic options to the C compiler, example below is for gcc , position independent code is desirable
 #                                        include path should include current directory
