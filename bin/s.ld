@@ -71,6 +71,7 @@ for i in ${LibPath[@]}; do
   done
   PATHUSED["${path}"]=1
 done
+# add $ORIGIN/../lib and $ORIGIN/../lib64 as a last source of libraries
 # RpathExtra='-rpath $ORIGIN/../lib -rpath $ORIGIN/../lib64'
 # RpathList="${RpathList} ${RpathExtra}"
 [[ -n ${LD_WRAPPER_DEBUG} ]] &&  echo RpathList=${RpathList[@]}
