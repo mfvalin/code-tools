@@ -1,0 +1,37 @@
+define="-DLittle_Endian  -DWITH_gfortran"
+MPI_LIB=""
+MPI_FC="mpif90"
+MPI_F90C="mpif90"
+MPI_CC=mpicc
+FC=${F77C:-gfortran}
+F90C=${F90C:-gfortran}
+CC="cc"
+FC_SHARED="-shared"
+CC_SHARED="-shared"
+Iprefix="-I"
+Lprefix="-L"
+lprefix="-l"
+FC_options=${FC_options:-" -fcray-pointer -fconvert=big-endian -frecord-marker=4 -fno-second-underscore -ffree-line-length-none -fpic ${Iprefix}. ${Iprefix}${ARMNLIB}/include ${Iprefix}${ARMNLIB}/include/${EC_ARCH}"}
+[[ -n $GFORTRAN_RPATH ]] && FC_options="$FC_options  -Wl,-rpath,$GFORTRAN_RPATH"
+FC_LD_options="-Wl,--allow-shlib-undefined"
+OPENMP="-lpthread -fopenmp"
+OPENMPCC="-D_REENTRANT -D_THREAD_SAFE  -lpthread"
+CC_options="-D_REENTRANT -Wtrigraphs -fpic -I. -I${ARMNLIB}/include -I${ARMNLIB}/include/${EC_ARCH} -I."
+CC_LD_options="-Wl,--allow-shlib-undefined"
+F_Opt[0]=-O0
+F_Opt[1]=-O1
+F_Opt[2]=-O2
+F_Opt[3]="-O3"
+F_Opt[4]="-O4"
+O_DEBUG="-g"
+C_Opt[0]=-O0
+C_Opt[1]=-O1
+C_Opt[2]=-O2
+C_Opt[3]=-O2
+C_Opt[4]=-O2
+prof_option="-p"
+
+AR=ar
+VECTOR_LIBS=massvp4_safe
+VECTOR_LIBS_safe=massvp4_safe
+echo Compiler Rules applied for gcc/gfortran
